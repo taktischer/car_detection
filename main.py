@@ -9,7 +9,7 @@ yolov5 = YOLOv5(model_path, device)
 
 # calculate the free parking lots
 # requires a list of tensors from yolov5
-def get_occupied_parking_lots(prediction, camera_position) -> int:
+def get_occupied_parking_lots(prediction, camera_position) -> list[int]:
     area = 0
     occupied_parking_spaces = []
 
@@ -32,7 +32,6 @@ def get_occupied_parking_lots(prediction, camera_position) -> int:
 
         # checks if the percentage in the base rectangle is below 25%
         if (x0 - x1) / width * 100 > 25.0 or (y0 - y1) / width * 100 > 25.0:
-
             # get the rgba value (overlay image) at the left bottom corner of the rectangle
             # if the value of red isn't 0 it will be added to the occupied_parking_spaces
             # the red value is the parking space id
@@ -41,7 +40,7 @@ def get_occupied_parking_lots(prediction, camera_position) -> int:
                 occupied_parking_spaces.append(position)
 
     image.close()
-    return len(occupied_parking_spaces)
+    return occupied_parking_spaces
 
 
 # get the prediction value from yolov5
@@ -72,4 +71,5 @@ def predict_image(camera_position: int):
 
 if __name__ == "__main__":
     camera = 3
-    print(get_occupied_parking_lots(predict_image(camera), camera))
+    predicted_image = predict_image(camera)
+    occupied_parking_lots: list = get_occupied_parking_lots(predicted_image, camera)
