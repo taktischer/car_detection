@@ -1,5 +1,7 @@
+
 from yolov5 import YOLOv5
 from PIL import Image
+import sqlite3
 
 # yolov5 definitions
 model_path = "yolov5/weights/yolov5s.pt"
@@ -69,7 +71,43 @@ def predict_image(camera_position: int):
     return results.pred[0]
 
 
+# function for inserting occupied parking lots into db
+def sql_insert(occupied_parking_lots) -> None:
+    # connect to db
+    con = sqlite3.connect('parking_surveillance.db') 
+    c = con.cursor()
+
+    # create table if it doesn't allready exist
+    try: 
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS parking_lots
+            (
+            parking_lot_id INT UNIQUE PRIMARY KEY,
+            is_occupied BOOLEAN
+            );
+        """)
+        con.commit()
+    except:
+        print("Already existing.")
+    # delete all old parking lots
+    c.execute("DELETE FROM parking_lots;")
+    # insert all active parking lots
+    sql_statement = """INSERT INTO parking_lots (parking_lot_id, is_occupied) VALUES"""
+    for idx, id in enumerate(occupied_parking_lots):
+        if idx + 1 == len(occupied_parking_lots):
+            sql_statement += f"({id}, TRUE);"
+        else:
+           sql_statement += f"({id}, TRUE)," 
+    
+    c.execute(sql_statement)
+    con.commit()
+    c.close()
+
 if __name__ == "__main__":
     camera = 3
     predicted_image = predict_image(camera)
     occupied_parking_lots: list = get_occupied_parking_lots(predicted_image, camera)
+    sql_insert(occupied_parking_lots)
+
+
+
